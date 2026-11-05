@@ -1,0 +1,12 @@
+{
+  "name": "sketchwise",
+  "version": "1.0.0",
+  "description": "Hand-drawn whiteboard in the browser: smart connected arrows, ink-to-shape, text-to-diagram, templates, share links, PNG/SVG export. No account, no server.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Mridul Nanda (MNB Research / Abrobot.ai)",
+  "repository": { "type": "git", "url": "https://github.com/mnbresearch/sketchwise.git" },
+  "homepage": "https://mnbresearch.github.io/sketchwise/",
+  "scripts": { "start": "python3 -m http.server 8080", "test": "node --test tests/*.test.mjs" },
+  "keywords": ["whiteboard", "excalidraw-alternative", "diagram", "sketch", "flowchart", "mind-map", "rough-js", "canvas"]
+}

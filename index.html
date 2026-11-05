@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <title>Sketchwise — hand-drawn whiteboard</title>
+    <meta name="description" content="A hand-drawn whiteboard in your browser: shapes, smart arrows, ink-to-shape, text-to-diagram, templates, share links and PNG/SVG export. No account, no server." />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M10 50 L44 16 L52 24 L18 58 L8 60 Z' fill='%23ffd43b' stroke='%231e1e1e' stroke-width='4' stroke-linejoin='round'/%3E%3C/svg%3E" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js"></script>
+  </head>
+  <body>
+    <canvas id="board"></canvas>
+    <textarea id="editor" spellcheck="false" hidden></textarea>
+
+    <div class="bar tools" id="tools" role="toolbar" aria-label="Tools">
+      <button data-tool="select" title="Select (V)" class="on">⬉<kbd>V</kbd></button>
+      <button data-tool="hand" title="Pan (H or hold Space)">✋<kbd>H</kbd></button>
+      <span class="sep"></span>
+      <button data-tool="rectangle" title="Rectangle (R)">▭<kbd>R</kbd></button>
+      <button data-tool="diamond" title="Diamond (D)">◇<kbd>D</kbd></button>
+      <button data-tool="ellipse" title="Ellipse (O)">◯<kbd>O</kbd></button>
+      <button data-tool="arrow" title="Arrow (A) — drop on shapes to connect">➝<kbd>A</kbd></button>
+      <button data-tool="line" title="Line (L)">╱<kbd>L</kbd></button>
+      <button data-tool="pen" title="Pen (P) — ink-to-shape when enabled">✎<kbd>P</kbd></button>
+      <button data-tool="text" title="Text (T)">A<kbd>T</kbd></button>
+      <button data-tool="eraser" title="Eraser (E)">⌫<kbd>E</kbd></button>
+      <button data-tool="laser" title="Laser pointer (K)">✦<kbd>K</kbd></button>
+      <span class="sep"></span>
+      <button id="lockBtn" title="Keep tool after drawing (Q)">🔒</button>
+      <button id="inkBtn" title="Ink → shape: turn rough pen strokes into clean shapes" class="on">✨</button>
+    </div>
+
+    <div class="bar menu-btns">
+      <button id="diagramBtn" title="Text → diagram">⌨︎ Text → diagram</button>
+      <button id="templatesBtn" title="Templates">▦ Templates</button>
+      <button id="shareBtn" class="primary" title="Share link">Share</button>
+      <button id="menuBtn" title="Menu" aria-label="Menu">☰</button>
+    </div>
+    <div class="dropdown" id="menu" hidden>
+      <button data-m="new">New board</button>
+      <button data-m="diagram">Text → diagram…</button>
+      <button data-m="templates">Templates…</button>
+      <button data-m="open">Open .sketchwise / .json…</button>
+      <button data-m="save">Save as .sketchwise</button>
+      <button data-m="png">Export PNG</button>
+      <button data-m="svg">Export SVG</button>
+      <button data-m="copy">Copy PNG to clipboard</button>
+      <hr />
+      <button data-m="grid">Toggle grid</button>
+      <button data-m="theme">Toggle dark mode</button>
+      <button data-m="help">Shortcuts & help</button>
+    </div>
+
+    <aside class="panel" id="stylePanel" hidden>
+      <div class="lab">Stroke</div><div class="swatches" data-prop="stroke"></div>
+      <div class="lab">Fill</div><div class="swatches" data-prop="fill"></div>
+      <div class="lab">Fill style</div>
+      <div class="seg" data-prop="fillStyle"><button data-v="hachure">Hachure</button><button data-v="cross-hatch">Cross</button><button data-v="solid">Solid</button></div>
+      <div class="lab">Stroke width</div>
+      <div class="seg" data-prop="strokeWidth"><button data-v="1">Thin</button><button data-v="2">Bold</button><button data-v="4">Extra</button></div>
+      <div class="lab">Sloppiness</div>
+      <div class="seg" data-prop="roughness"><button data-v="0">Architect</button><button data-v="1">Artist</button><button data-v="2.2">Cartoon</button></div>
+      <div class="lab">Font size</div>
+      <div class="seg" data-prop="fontSize"><button data-v="16">S</button><button data-v="20">M</button><button data-v="28">L</button><button data-v="40">XL</button></div>
+      <div class="lab">Opacity</div><input type="range" min="0.1" max="1" step="0.1" data-prop="opacity" />
+      <div class="lab">Arrange</div>
+      <div class="seg"><button data-act="back" title="Send to back ([)">⤓ Back</button><button data-act="front" title="Bring to front (])">⤒ Front</button><button data-act="dup" title="Duplicate (Ctrl+D)">⧉</button><button data-act="del" title="Delete">🗑</button></div>
+    </aside>
+
+    <div class="bar zoom">
+      <button id="undoBtn" title="Undo (Ctrl+Z)">↶</button>
+      <button id="redoBtn" title="Redo (Ctrl+Shift+Z)">↷</button>
+      <span class="sep"></span>
+      <button id="zoomOut" title="Zoom out">−</button>
+      <button id="zoomReset" title="Reset zoom">100%</button>
+      <button id="zoomIn" title="Zoom in">+</button>
+      <button id="fitBtn" title="Zoom to fit (Shift+1)">⤢</button>
+    </div>
+
+    <div class="hint" id="hint">Pick a tool and draw · double-click to add text · drop an arrow on a shape to connect · <b>Text → diagram</b> to generate flowcharts</div>
+
+    <dialog id="dlg"><form method="dialog" id="dlgBody"></form></dialog>
+    <input type="file" id="fileIn" accept=".sketchwise,.json,application/json,image/*" hidden />
+    <div class="toast" id="toast" hidden></div>
+    <script type="module" src="sketch.js"></script>
+  </body>
+</html>
